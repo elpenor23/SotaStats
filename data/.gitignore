@@ -1,0 +1,4 @@
+# ignore all the data but we want this directory to exist
+*
+# except the .gitignore file
+!.gitignore
