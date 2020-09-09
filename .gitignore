@@ -1,2 +1,6 @@
 .vscode
 __pycache__
+countsummits.py
+.gitignore
+error.log
+geckodriver.log

@@ -7,10 +7,9 @@ if __name__ == '__main__':
     start_time = time.time()
 
     print("Initizing Spider")
-    spider = Spider(["code", "W0C"]) #W1
+    spider = Spider(["code", "W6"]) #W1, W0C
     print("Crawling")
     spider.start()
-    spider.completeStatus()
 
     elapsed_time = time.time() - start_time
 

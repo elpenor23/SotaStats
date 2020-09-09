@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from ThreadedRunner import ThreadedRunner
-import requests, time, sys, random
-from utils.utils import write_to_json_file, get_api_results
+import requests, time, sys, random, logging
+from utils.utils import write_to_json_file, get_api_results, fileExists
 
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
@@ -12,6 +12,9 @@ from selenium.webdriver.firefox.options import Options
 class Spider(ThreadedRunner):
     def initialize(self, args):
         """ initialize things we need to initialize """
+        logging.basicConfig(filename='error.log', filemode='w', level=logging.WARNING)
+        logging.warning("Start: Initializing...")
+
         all_association = get_api_results(self.config["associationAPIBase"])
         i = 0
         for association in all_association:
@@ -20,7 +23,7 @@ class Spider(ThreadedRunner):
                 for region in associationDetails["regions"]:
                     regionDetails = get_api_results(self.config["regionAPIBase"] + region["associationCode"] + "/" + region["regionCode"] + "/")
                     for summit in regionDetails["summits"]:
-                        if int(summit["activationCount"]) > 0:
+                        if int(summit["activationCount"]) > 0 and not fileExists(self.config["dataLocationDirectory"], self.create_file_name(summit["summitCode"])):
                             if i < 100:
                                 i += 1
                             else:
@@ -33,11 +36,9 @@ class Spider(ThreadedRunner):
                                 "summit_points": summit["points"], 
                                 "summit_name": summit["name"]
                             }
-                            
+
                             self.Q.append(summit_data)
-        self.updateStatus(100, 100)
-        self.completeStatus("Initilization Complete")
-        print(str(len(self.Q)) + " summits added to the Queue.")
+        self.completeInitialization()
 
     def useThisAssociation(self, association, args):
         """ to filter which associations we check """
@@ -53,7 +54,12 @@ class Spider(ThreadedRunner):
 
     def runner(self, data):
         """ worker to do the things """
-        self.get_page(data["association_code"], data["region_code"], data["summit_code"], str(data["summit_points"]), data["summit_name"])
+        logging.basicConfig(filename='error.log',level=logging.WARNING)
+        try:
+            self.get_page(data["association_code"], data["region_code"], data["summit_code"], str(data["summit_points"]), data["summit_name"])
+        except Exception as ex:
+            error_text = f"Getting Page Data Failed:{ex}/nData: {data}"
+            logging.warning(error_text)
 
         #after we are done update the progress bar
         self.completedTasks.append(data)
@@ -66,22 +72,23 @@ class Spider(ThreadedRunner):
         if URL is None:
             print("Bad URL!: " + str(URL))
 
+        html = ""
+
         #setup the browser headless
         opts = Options()
         opts.headless = True
-        browser = Firefox(executable_path='/usr/bin/geckodriver', options=opts)
-        
-        #get the webpage
-        browser.get(URL)
 
-        #wait to make sure that the angular app loads
-        wait = WebDriverWait(browser, 10)
-        wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "ng-star-inserted")))
+        with Firefox(executable_path='/usr/bin/geckodriver', options=opts) as browser:
+            #browser = Firefox(executable_path='/usr/bin/geckodriver', options=opts)
+            #get the webpage
+            browser.get(URL)
 
-        #get the page and close the browser
-        html = browser.page_source
+            #wait to make sure that the angular app loads
+            wait = WebDriverWait(browser, 10)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "ng-star-inserted")))
 
-        browser.close()
+            #get the page and close the browser
+            html = browser.page_source
 
         j = {
             "association_code": association_code,
@@ -92,4 +99,8 @@ class Spider(ThreadedRunner):
             "webpage": html
         }
 
-        write_to_json_file(self.config["dataLocationDirectory"], summit_code.replace("/", "-") + ".json", j)
+        write_to_json_file(self.config["dataLocationDirectory"], self.create_file_name(summit_code), j)
+    
+    def create_file_name(self, summit_code):
+        """ create the filename """
+        return summit_code.replace("/", "-") + ".json"

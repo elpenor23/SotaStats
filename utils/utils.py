@@ -24,11 +24,15 @@ def write_to_json_file(dir, file_name, data):
         if not os.path.isdir(dir):
             os.mkdir(dir)
 
-        with open(dir + "/" + file_name, "w") as data_file:
+        with open(dir + file_name, "w") as data_file:
             json.dump(data, data_file)
     except Exception as ex:
         error_text = f"Error Could not write to file:{ex}"
         logging.warning(error_text)
+
+def fileExists(dir, file_name):
+    """ checks if a file exists """
+    return os.path.isfile(dir + file_name)
 
 def get_api_results(api_url):
     logging.basicConfig(filename='error.log',level=logging.WARNING)
