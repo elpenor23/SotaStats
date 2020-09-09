@@ -1,8 +1,8 @@
 {
     "associationAPIBase": "https://api2.sota.org.uk/api/associations/",
     "regionAPIBase": "https://api2.sota.org.uk/api/regions/",
-    "summitPageBase": "https://summits.sota.org.uk/activity/",
+    "summitAPIBase": "https://api2.sota.org.uk/api/activations/",
     "associationFilter": "USA",
-    "dataLocationDirectory": "./data/",
+    "dataLocationDirectory": "/mount/usb/data/",
     "numberOfThreads": 10
 }

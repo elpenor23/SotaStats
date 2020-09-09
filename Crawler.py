@@ -23,7 +23,7 @@ class Spider(ThreadedRunner):
                 for region in associationDetails["regions"]:
                     regionDetails = get_api_results(self.config["regionAPIBase"] + region["associationCode"] + "/" + region["regionCode"] + "/")
                     for summit in regionDetails["summits"]:
-                        if int(summit["activationCount"]) > 0 and not fileExists(self.config["dataLocationDirectory"], self.create_file_name(summit["summitCode"])):
+                        if int(summit["activationCount"]) > 0 and not fileExists(self.config["dataLocationDirectory"] + region["associationCode"] + "/", self.create_file_name(summit["summitCode"])):
                             if i < 100:
                                 i += 1
                             else:
@@ -56,50 +56,29 @@ class Spider(ThreadedRunner):
         """ worker to do the things """
         logging.basicConfig(filename='error.log',level=logging.WARNING)
         try:
-            self.get_page(data["association_code"], data["region_code"], data["summit_code"], str(data["summit_points"]), data["summit_name"])
+            self.get_activations(data["association_code"], data["region_code"], data["summit_code"], str(data["summit_points"]), data["summit_name"])
         except Exception as ex:
-            error_text = f"Getting Page Data Failed:{ex}/nData: {data}"
+            error_text = f"Getting Page Data Failed:{ex}Data: {data}"
             logging.warning(error_text)
 
         #after we are done update the progress bar
         self.completedTasks.append(data)
         self.updateStatus()
 
-    def get_page(self, association_code, region_code, summit_code, summit_points, summit_name):
-        """ scrape the html and save it locally for processing """
-        URL = self.config["summitPageBase"] + summit_code
-
-        if URL is None:
-            print("Bad URL!: " + str(URL))
-
-        html = ""
-
-        #setup the browser headless
-        opts = Options()
-        opts.headless = True
-
-        with Firefox(executable_path='/usr/bin/geckodriver', options=opts) as browser:
-            #browser = Firefox(executable_path='/usr/bin/geckodriver', options=opts)
-            #get the webpage
-            browser.get(URL)
-
-            #wait to make sure that the angular app loads
-            wait = WebDriverWait(browser, 10)
-            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "ng-star-inserted")))
-
-            #get the page and close the browser
-            html = browser.page_source
-
+    def get_activations(self, association_code, region_code, summit_code, summit_points, summit_name):
+        """ Getting directly from the API """
+        data = get_api_results(self.config["summitAPIBase"] + summit_code)
+        
         j = {
             "association_code": association_code,
             "region_code": region_code,
             "summit_code": summit_code,
             "summit_points": summit_points,
             "summit_name": summit_name,
-            "webpage": html
+            "activations": data
         }
 
-        write_to_json_file(self.config["dataLocationDirectory"], self.create_file_name(summit_code), j)
+        write_to_json_file(self.config["dataLocationDirectory"] + association_code + "/", self.create_file_name(summit_code), j)
     
     def create_file_name(self, summit_code):
         """ create the filename """

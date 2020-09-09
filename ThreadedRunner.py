@@ -31,7 +31,7 @@ class ThreadedRunner():
 
         self.completeStatus(str(len(self.completedTasks)) + " Tasks have been completed!")
         
-    def completeInitialization():
+    def completeInitialization(self):
         self.updateStatus(100, 100)
         self.completeStatus("Initilization Complete")
         print(str(len(self.Q)) + " items added to the Queue.")
@@ -41,6 +41,10 @@ class ThreadedRunner():
             total = len(self.Q)
         if current == 0:
             current = len(self.completedTasks)
+
+        if total == 0:
+            #if total is still 0 we need a non-zero number
+            total = 100
 
         fill = '█'
         decimals = 1

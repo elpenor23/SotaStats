@@ -12,4 +12,6 @@ if __name__ == '__main__':
 
     elapsed_time = time.time() - start_time
 
-    print("Elapsed Time: " + str(elapsed_time))
+    hours, rem = divmod(elapsed_time, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))

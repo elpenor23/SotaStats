@@ -4,6 +4,7 @@ from ThreadedRunner import ThreadedRunner
 from bs4 import BeautifulSoup
 from utils.utils import translate_date, open_json_file
 from utils.database import add_activation_record
+from pathlib import Path
 
 class Scraper(ThreadedRunner):
     def initialize(self, args):
@@ -13,54 +14,26 @@ class Scraper(ThreadedRunner):
         if args[0] == "single":
             self.Q.append(args[1])
         else:
-            self.Q = os.listdir(self.config["dataLocationDirectory"])
+            self.Q = list(Path(self.config["dataLocationDirectory"]).rglob("*.json"))
 
         self.completeInitialization()
 
     def runner(self, work):
         try:
-            json_data = open_json_file(self.config["dataLocationDirectory"] + work)
+            json_data = open_json_file(work)
 
-            data = self.scrape_html(str(json_data["webpage"]))
-
-            for activation in data["activations"]:
-                add_activation_record(activation["activation_date"], 
-                                activation["activation_callsign"],
+            for activation in json_data["activations"]:
+                add_activation_record(activation["activationDate"], 
+                                activation["ownCallsign"],
                                 json_data["association_code"],
                                 json_data["region_code"],
                                 json_data["summit_code"], 
                                 json_data["summit_name"], 
                                 json_data["summit_points"], 
-                                activation["activation_number_of_qso"])
+                                activation["qsos"])
         except Exception as ex:
-            error_text = f"Getting Page Data Failed:{ex}/nData: {work}"
+            error_text = f"Getting Page Data Failed:{ex} Data: {work}"
             logging.warning(error_text)
 
         self.completedTasks.append(work)
         self.updateStatus()
-
-    def scrape_html(self, html):
-        """ process page """
-        #time to parse the page and get the data
-        soup = BeautifulSoup(html, "html.parser")
-
-        app = soup.find("app-data-table")
-
-        data = {
-            "activations":[]
-        }
-
-        if app is None:
-            return data
-
-        table = app.find("tbody").findAll("tr")
-
-        for tr in table:
-            tds = tr.findAll("td")
-            activation = {}
-            activation["activation_date"] = translate_date(tds[0].text.strip())
-            activation["activation_callsign"] = tds[1].text.strip()
-            activation["activation_number_of_qso"] = int(tds[2].text.strip())
-            data["activations"].append(activation)
-
-        return data

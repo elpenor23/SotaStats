@@ -35,9 +35,9 @@ def fileExists(dir, file_name):
     return os.path.isfile(dir + file_name)
 
 def get_api_results(api_url):
+    """attempts to get results passed back from the passed in API"""
     logging.basicConfig(filename='error.log',level=logging.WARNING)
 
-    """attempts to get results passed back from the passed in API"""
     json_results = ""
 
     try:
@@ -50,7 +50,7 @@ def get_api_results(api_url):
         error_text = f"HTTP Connection Pool Error Could not get weather:{http_con_err}"
         logging.warning(error_text)
     except json.JSONDecodeError as err:
-        error_text = f'JSON Decoding error occurred: {err}'
+        error_text = f'JSON Decoding error occurred: {err} Data: {request}'
         logging.warning(error_text)
     except Exception as err:
         error_text = f'Unknown error occurred: {err}'
