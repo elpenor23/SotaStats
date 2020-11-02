@@ -5,7 +5,7 @@ from mysql.connector import errorcode
 def connect_to_db():
     """ connects to the db """
     try:
-        db = mysql.connector.connect(user='eric',
+        db = mysql.connector.connect(user='user',
                                 password='*****',
                                 host='localhost',
                                 database='sota_stats')
